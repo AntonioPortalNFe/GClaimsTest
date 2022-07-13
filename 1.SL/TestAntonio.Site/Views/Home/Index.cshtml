@@ -1,0 +1,105 @@
+﻿@using System.Net
+@model TestAntonio.Contracts.Marvel.CharacterDataWrapper
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+<div class="text-center">
+    <h1 class="display-6">Personagens Marvel</h1>    
+    <p>&nbsp;</p>
+</div>
+
+@if(Model.code != (int)HttpStatusCode.OK)
+{
+    <div class="text-center">        
+        <h2>Erro ao consultar personagens</h2>
+        <h3>@($"{Model.code} - {Model.message}")</h3>        
+    </div>
+    return;
+}
+
+<form asp-action="Index" method="get">
+    <div class="form-actions no-color">
+        <div class="float-right">
+            Find by name starting with: <input type="text" name="nameStartsWith" style="width:150px;" value="@ViewData["nameStartsWith"]" /> Or 
+            Full name: <input type="text" name="nameFilter" value="@ViewData["nameFilter"]" /> 
+            View Rows: <input type="number" style="width:60px;" name="limit" value="@ViewData["limit"]" />                          
+            <input type="submit" value="Search" class="btn btn-primary" /> |            
+            <a asp-action="Index" class="btn btn-light" >Reset</a>
+            
+        </div>
+    </div>
+</form>
+<p>&nbsp;</p>
+
+
+@{ 
+    Html.RenderPartial("_PaginationPartial", Model);
+ }
+
+<table class="table">
+    <thead>
+        <tr>
+            <th width="20%">
+                <a asp-action="Index" asp-route-orderBy="@ViewData["name"]">Name</a>
+            </th>
+            <th>
+                Description                    
+            </th>
+            <th width="20%">
+                <a asp-action="Index" asp-route-orderBy="@ViewData["modified"]">Modified</a>
+            </th>
+            <th width="10%"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var item in Model.data.results)
+        {
+            <tr>
+                <td style="white-space:nowrap">
+                     @if (item.favorite)
+                    {
+                        <h5 style="color:red">
+                            @item.name                        
+                        </h5>
+                    }
+                    else
+                    {
+                        <h5 class="text-black-50">
+                            @item.name                        
+                        </h5>
+                    }
+                    <img src=@($"{item.thumbnail.path}.{item.thumbnail.extension}") height="100" width="150"/>
+                    
+                </td>
+                <td>
+                    @item.description
+                </td>
+                <td>                
+                    @try
+                    {
+                        @DateTime.Parse(item.modified).ToString("dd-MM-yyyy HH:MM")
+                    }
+                    catch (Exception)
+                    {                                            
+                    }
+                    
+                </td>
+                <td>
+                    <p><a asp-action="Delete" asp-route-id="@item.id" asp-route-orderBy="@ViewData["orderBy"]">Delete</a></p>                    
+                    <p>
+                        @if (item.favorite)
+                        {
+                            <a asp-action="NotFavorite" asp-route-id="@item.id" asp-route-orderBy="@ViewData["orderBy"]" >Not favorite</a>
+                        }
+                        else
+                        {
+                           <a asp-action="Favorite" asp-route-id="@item.id" asp-route-orderBy="@ViewData["orderBy"]" >Favorite</a> 
+                        }
+                    </p>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

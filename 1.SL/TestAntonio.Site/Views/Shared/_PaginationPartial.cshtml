@@ -1,0 +1,49 @@
+﻿@model TestAntonio.Contracts.Marvel.CharacterDataWrapper
+@{
+    int total = Model.data.total;
+    int pageSize = Model.data.limit;
+    int totalPages =  (int)(total / pageSize);
+    int pageIndex = (int)ViewData["pageNumber"];
+
+    int firstPage = pageIndex - 10;
+    int lastPage = pageIndex + 10;
+
+    if (firstPage < 1)
+    {
+        firstPage = 1;
+        lastPage = firstPage + 20;
+    }
+
+    if (lastPage > totalPages)
+    {
+        lastPage = totalPages;   
+        firstPage = lastPage - 20;
+
+        if (firstPage < 1)                
+            firstPage = 1;
+    }
+
+
+}
+
+
+<form asp-action="Index" method="get">
+    <div class="form-actions no-color row">
+        <div class="col-12">        
+            <div class="float-right">
+                <p>
+                    @if (totalPages > 1)
+                    {
+                        <a asp-action="Index"  asp-route-pageNumber="1" class="btn btn-light" >First page</a>
+                        @for (int i = firstPage; i < lastPage; i++)
+                        {
+                            <a asp-action="Index" class="@(pageIndex == i? "font-weight-bold" : "")" asp-route-nameStartsWith="@ViewData["nameStartsWith"]" asp-route-nameFilter="@ViewData["nameFilter"]" asp-route-limit="@ViewData["limit"]" asp-route-pageNumber="@i">@i</a>
+                        }
+                        <a asp-action="Index"  asp-route-pageNumber="@totalPages" class="btn btn-light" >Last page</a>
+                    }
+                    &nbsp;</p>
+            </div>
+        </div>
+        
+    </div>
+</form>
