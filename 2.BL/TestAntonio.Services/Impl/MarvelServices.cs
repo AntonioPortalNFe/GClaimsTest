@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using TestAntonio.Contracts.Marvel;
 using TestAntonio.Infrastructure.Interfaces;
 using TestAntonio.Services.Interfaces;
+using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Diagnostics;
 
 namespace TestAntonio.Services.Impl
 {
@@ -12,30 +15,59 @@ namespace TestAntonio.Services.Impl
     {        
         private readonly ICharacterRepository _characterRepository;
         private readonly HttpContext _context;
-        
-        public MarvelServices(ICharacterRepository characterRepository, IHttpContextAccessor context)
+        private readonly ILogger<MarvelServices> _logger;
+        public MarvelServices(ILogger<MarvelServices> logger, ICharacterRepository characterRepository, IHttpContextAccessor context)
         {            
             _characterRepository = characterRepository;
             _context = context.HttpContext;
+            _logger = logger;
         }
 
         public async Task<CharacterDataWrapper> GetCharacters(string orderBy, string name, string nameStartsWith, int pageNumber, int limit)
         {
-            int offSet = (pageNumber - 1) * limit;
-            string parameters = $"limit={limit}&offset={offSet}&orderBy={orderBy}";
-            
-            if (!string.IsNullOrEmpty(name))
-                parameters += $"&name={name}";
+            var response = new CharacterDataWrapper();
+            string parameters = string.Empty;
+            var timeStopWatch = new Stopwatch();
+            timeStopWatch.Start();
 
-            if (!string.IsNullOrEmpty(nameStartsWith))
-                parameters += $"&nameStartsWith={nameStartsWith}";            
+            _logger.Log(LogLevel.Information, "Started GetCharacters");
 
-            var response = await _characterRepository.Get(parameters);
-            
+            try
+            {                
+
+                int offSet = (pageNumber - 1) * limit;
+                parameters = $"limit={limit}&offset={offSet}&orderBy={orderBy}";
+
+                if (!string.IsNullOrEmpty(name))
+                    parameters += $"&name={name}";
+
+                if (!string.IsNullOrEmpty(nameStartsWith))
+                    parameters += $"&nameStartsWith={nameStartsWith}";
+
+                response = await _characterRepository.Get(parameters);
+
+                timeStopWatch.Stop();
+                
+            }
+            catch (System.Exception ex)
+            {
+
+                response.code = (int)HttpStatusCode.InternalServerError;
+                response.message = ex.Message;
+
+                _logger.LogCritical($"Error code: {response.code} - message: {response.message}");
+
+            }
+            finally
+            {
+                _logger.Log(LogLevel.Information, "Finished GetCharacters \tTime: {1}ms \tparameters url: {2}", timeStopWatch.ElapsedMilliseconds, parameters);
+            }
+
             return OrganizeCharacters(response);
+
         }      
 
-        public CharacterDataWrapper OrganizeCharacters(CharacterDataWrapper characterDataWrapper)
+        private CharacterDataWrapper OrganizeCharacters(CharacterDataWrapper characterDataWrapper)
         {
             
             string favorites = _context.Request.Cookies["favorite"] ?? "";
@@ -60,63 +92,118 @@ namespace TestAntonio.Services.Impl
         }
 
         public void FavoriteCharacters(int id)
-        {            
+        {
+            var timeStopWatch = new Stopwatch();
+            timeStopWatch.Start();
 
-            var listFavorites = new List<string>();
+            _logger.Log(LogLevel.Information, "Started FavoriteCharacters");
 
-            string favorites = _context.Request.Cookies["favorite"] ?? "";
+            try
+            {                
 
-            listFavorites = favorites.Split(',').ToList();
+                var listFavorites = new List<string>();
 
-            if (listFavorites.Count >= 5)
-                listFavorites.Remove(listFavorites.First());
+                string favorites = _context.Request.Cookies["favorite"] ?? "";
 
-            listFavorites.Add(id.ToString());
+                listFavorites = favorites.Split(',').ToList();
 
-            favorites = string.Empty;
+                if (listFavorites.Count >= 5)
+                    listFavorites.Remove(listFavorites.First());
 
-            foreach (var item in listFavorites.Where(x => !string.IsNullOrEmpty(x)))
-                favorites += ',' + item;
+                listFavorites.Add(id.ToString());
 
-            _context.Response.Cookies.Append("favorite", favorites.Substring(1));
+                favorites = string.Empty;
+
+                foreach (var item in listFavorites.Where(x => !string.IsNullOrEmpty(x)))
+                    favorites += ',' + item;
+
+                _context.Response.Cookies.Append("favorite", favorites.Substring(1));
+
+            }
+            catch (System.Exception ex)
+            {
+
+                _logger.LogError($" Message: {ex.Message} \tFavoriteCharactersId: {id}");
+            }
+            finally
+            {
+                _logger.Log(LogLevel.Information, "Finished FavoriteCharacters \tTime: {1}ms", timeStopWatch.ElapsedMilliseconds);
+            }
         }
 
         public void NotFavoriteCharacters(int id)
         {
-                        
-            var listFavorites = new List<string>();
 
-            string favorites = _context.Request.Cookies["favorite"] ?? "";
+            var timeStopWatch = new Stopwatch();
+            timeStopWatch.Start();
 
-            listFavorites = favorites.Split(',').ToList();            
-            
-            listFavorites.Remove(id.ToString());
+            _logger.Log(LogLevel.Information, "Started NotFavoriteCharacters");
 
-            favorites = string.Empty;
+            try
+            {
 
-            foreach (var item in listFavorites.Where(x => !string.IsNullOrEmpty(x)))
-                favorites += ',' + item;
+                var listFavorites = new List<string>();
 
-            _context.Response.Cookies.Append("favorite", favorites.Substring(1));
+                string favorites = _context.Request.Cookies["favorite"] ?? "";
+
+                listFavorites = favorites.Split(',').ToList();
+
+                listFavorites.Remove(id.ToString());
+
+                favorites = string.Empty;
+
+                foreach (var item in listFavorites.Where(x => !string.IsNullOrEmpty(x)))
+                    favorites += ',' + item;
+
+                _context.Response.Cookies.Append("favorite", favorites.Substring(1));
+
+            }
+            catch (System.Exception ex)
+            {
+
+                _logger.LogError($" Message: {ex.Message} \tNotFavoriteCharactersId: {id}");
+            }
+            finally
+            {
+                _logger.Log(LogLevel.Information, "Finished NotFavoriteCharacters \tTime: {1}ms", timeStopWatch.ElapsedMilliseconds);
+            }
+
         }
 
         public void DeleteCharacters(int id)
         {
+            var timeStopWatch = new Stopwatch();
+            timeStopWatch.Start();
 
-            var listDeleted = new List<string>();
+            _logger.Log(LogLevel.Information, "Started DeleteCharacters");
 
-            string deleteds = _context.Request.Cookies["deleted"] ?? "";
+            try
+            {
+                var listDeleted = new List<string>();
 
-            listDeleted = deleteds.Split(',').ToList();
+                string deleteds = _context.Request.Cookies["deleted"] ?? "";
 
-            listDeleted.Add(id.ToString());
+                listDeleted = deleteds.Split(',').ToList();
 
-            deleteds = string.Empty;
+                listDeleted.Add(id.ToString());
 
-            foreach (var item in listDeleted.Where(x => !string.IsNullOrEmpty(x)))
-                deleteds += ',' + item;
+                deleteds = string.Empty;
 
-            _context.Response.Cookies.Append("deleted", deleteds.Substring(1));
+                foreach (var item in listDeleted.Where(x => !string.IsNullOrEmpty(x)))
+                    deleteds += ',' + item;
+
+                _context.Response.Cookies.Append("deleted", deleteds.Substring(1));
+            }
+            catch (System.Exception ex)
+            {
+
+                _logger.LogError($" Message: {ex.Message} \tDeleteCharactersId: {id}");
+            }
+            finally
+            {
+                _logger.Log(LogLevel.Information, "Finished DeleteCharacters \tTime: {1}ms", timeStopWatch.ElapsedMilliseconds);
+            }
+
         }
     }
 }

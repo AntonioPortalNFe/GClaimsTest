@@ -51,7 +51,9 @@ namespace TestAntonio.Site
             else
             {
                 app.UseExceptionHandler("/Home/Error");
-            }
+            }        
+
+
             app.UseStaticFiles();
 
             app.UseRouting();

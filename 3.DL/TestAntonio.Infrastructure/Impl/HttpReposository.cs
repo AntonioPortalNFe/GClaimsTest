@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -18,13 +19,15 @@ namespace TestAntonio.Infrastructure.Impl
     {
         private readonly HttpClient _httpClient;
         private readonly IMarvelSettings _marvelSettings;
+        private readonly ILogger<HttpReposository> _logger;
         private long _ts;
         private string _hash;
-        public HttpReposository(IMarvelSettings marvelSettings)
+        public HttpReposository(ILogger<HttpReposository> logger, IMarvelSettings marvelSettings)
         {
             _httpClient = new HttpClient();
             _marvelSettings = marvelSettings;
             _httpClient.BaseAddress = new Uri(_marvelSettings.Endpoint);
+            _logger = logger;
             _ts = DateTime.Now.ConvertDateTimeToTimestamp();
             _hash = GeneralTools.GenerateHash(_ts, _marvelSettings.PublicKey, _marvelSettings.PrivateKey);
         }
@@ -48,6 +51,7 @@ namespace TestAntonio.Infrastructure.Impl
 
                         response.code = (int)httpResponse.StatusCode;
                         response.message = (string)message;
+                        _logger.LogError($"Error code: {response.code} - message: {response.message} - parameters url: {parameters}");
                     }
                     else
                     {
@@ -63,6 +67,7 @@ namespace TestAntonio.Infrastructure.Impl
             {
                 response.code = (int)HttpStatusCode.InternalServerError;
                 response.message = ex.Message;
+                _logger.LogCritical($"Error code: {response.code} - message: {response.message} - parameters url: {parameters}");
                 return response;
             }
 
@@ -93,6 +98,8 @@ namespace TestAntonio.Infrastructure.Impl
 
                         response.code = (int)httpResponse.StatusCode;
                         response.message = (string)message;
+
+                        _logger.LogError($"Error code: {response.code} - message: {response.message} - request: {requestStr}");
                     }
                     else
                     {
@@ -108,6 +115,7 @@ namespace TestAntonio.Infrastructure.Impl
             {
                 response.code = (int)HttpStatusCode.InternalServerError;
                 response.message = ex.Message;
+                _logger.LogCritical($"Error code: {response.code} - message: {response.message} - request: {requestStr}");
                 return response;
             }
 
