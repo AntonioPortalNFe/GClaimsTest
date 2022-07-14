@@ -35,9 +35,9 @@ namespace TestAntoino.Api.Controllers
         }
 
         [HttpGet("FavoriteCharacters")]
-        public ResponseContainer FavoriteCharacters(int id)
+        public async Task<ResponseContainer> FavoriteCharacters(int id)
         {            
-              return _marvelServices.FavoriteCharacters(id);            
+              return await _marvelServices.FavoriteCharacters(id);            
         }
 
         [HttpGet("NotFavoriteCharacters")]
@@ -46,10 +46,16 @@ namespace TestAntoino.Api.Controllers
             return _marvelServices.NotFavoriteCharacters(id);
         }
 
+        [HttpGet("ListFavoritesCharacters")]
+        public CharacterDataWrapper ListFavoritesCharacters()
+        {
+            return _marvelServices.ListFavoritesCharacters();
+        }
+
         [HttpGet("DeleteCharacters")]
         public ResponseContainer DeleteCharacters(int id)
         {            
-            return  _marvelServices.DeleteCharacters(id);
+            return _marvelServices.DeleteCharacters(id);
         }
     }
 }

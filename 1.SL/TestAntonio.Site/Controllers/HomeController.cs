@@ -10,10 +10,10 @@ namespace TestAntonio.Site.Controllers
     public class HomeController : Controller
     {
         private readonly IConfiguration _config;
-
+        
         public HomeController(IConfiguration config)
         {
-            _config = config;
+            _config = config;        
         }
 
         public async Task<IActionResult> Index(string orderBy = "name", 
@@ -39,30 +39,41 @@ namespace TestAntonio.Site.Controllers
             
         }
 
+        public async Task<IActionResult> ListFavoritesCharacters()
+        {
+            var characterDataWrapper = await GetAsync<CharacterDataWrapper>("ListFavoritesCharacters");
+
+            return View("index", characterDataWrapper);
+        }
+
         public async Task Favorite(int? id)
         {            
 
             if (id != null)
-                await GetAsync<ResponseContainer>("FavoriteCharacters", "id=" + id);                  
+                await GetAsync<ResponseContainer>("FavoriteCharacters", "id=" + id);
 
-            Response.Redirect("/" + Request.QueryString);
+            var url = Request.Headers["Referer"].ToString();
+            Response.Redirect(url);
         }
+
         public async Task NotFavorite(int? id)
         {
 
             if (id != null)
-                await GetAsync<ResponseContainer>("NotFavoriteCharacters", "id=" + id);            
+                await GetAsync<ResponseContainer>("NotFavoriteCharacters", "id=" + id);
 
-            Response.Redirect("/" + Request.QueryString);
+            var url = Request.Headers["Referer"].ToString();
+            Response.Redirect(url);
         }
 
         public async Task Delete(int? id)
         {
 
             if (id != null)
-                await GetAsync<ResponseContainer>("DeleteCharacters", "id=" +id);                           
+                await GetAsync<ResponseContainer>("DeleteCharacters", "id=" +id);
 
-            Response.Redirect("/" + Request.QueryString);
+            var url = Request.Headers["Referer"].ToString();
+            Response.Redirect(url);
         }
 
 

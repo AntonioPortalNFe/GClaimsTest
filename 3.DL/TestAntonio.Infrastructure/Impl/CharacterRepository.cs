@@ -21,7 +21,7 @@ namespace TestAntonio.Infrastructure.Interfaces
             return await _httpReposository.GetAsync<CharacterDataWrapper>("characters", parameters);
         }
 
-        public async Task<CharacterDataWrapper> GetByID(string characterId)
+        public async Task<CharacterDataWrapper> GetByID(int characterId)
         {
             return  await _httpReposository.GetAsync<CharacterDataWrapper>($"characters/{characterId}");
         }

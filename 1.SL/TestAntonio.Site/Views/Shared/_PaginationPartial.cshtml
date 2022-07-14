@@ -2,8 +2,8 @@
 @{
     int total = Model.data.total;
     int pageSize = Model.data.limit;
-    int totalPages =  (int)(total / pageSize);
-    int pageIndex = (int)ViewData["pageNumber"];
+   int totalPages =  (int)(total  / (pageSize > 0? pageSize : 1));
+    int pageIndex = (int)(ViewData["pageNumber"] ?? 0);
 
     int firstPage = pageIndex - 10;
     int lastPage = pageIndex + 10;

@@ -6,6 +6,6 @@ namespace TestAntonio.Infrastructure.Interfaces
     public interface ICharacterRepository
     {
         Task<CharacterDataWrapper> Get(string parameters);
-        Task<CharacterDataWrapper> GetByID(string characterId);        
+        Task<CharacterDataWrapper> GetByID(int characterId);        
     }
 }

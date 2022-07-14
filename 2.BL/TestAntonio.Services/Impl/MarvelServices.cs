@@ -29,8 +29,8 @@ namespace TestAntonio.Services.Impl
         {
             var response = new CharacterDataWrapper();
             string parameters = string.Empty;
-            var timeStopWatch = new Stopwatch();
-            timeStopWatch.Start();
+            var watch = new Stopwatch();
+            watch.Start();
 
             _logger.Log(LogLevel.Information, "Started GetCharacters");
 
@@ -48,7 +48,7 @@ namespace TestAntonio.Services.Impl
 
                 response = await _characterRepository.Get(parameters);
 
-                timeStopWatch.Stop();
+                watch.Stop();
                 
             }
             catch (System.Exception ex)
@@ -62,7 +62,7 @@ namespace TestAntonio.Services.Impl
             }
             finally
             {
-                _logger.Log(LogLevel.Information, "Finished GetCharacters \tTime: {1}ms \tparameters url: {2}", timeStopWatch.ElapsedMilliseconds, parameters);
+                _logger.Log(LogLevel.Information, "Finished GetCharacters \tTime: {1}ms \tparameters url: {2}", watch.ElapsedMilliseconds, parameters);
             }
 
             return OrganizeCharacters(response);
@@ -72,68 +72,110 @@ namespace TestAntonio.Services.Impl
         private CharacterDataWrapper OrganizeCharacters(CharacterDataWrapper characterDataWrapper)
         {
 
-            string favorites = string.Empty;
-            string deleteds = string.Empty;
+            List<Character> listFavorites;
+            List<int> listDeleteds;
 
-            _cache.TryGetValue("favorite", out favorites);    
-            _cache.TryGetValue("deleted", out deleteds);
+            if(!_cache.TryGetValue("favorite", out listFavorites))
+                listFavorites = new List<Character>();
 
-            if (!string.IsNullOrEmpty(favorites))
+            if(!_cache.TryGetValue("deleted", out listDeleteds))
+                listDeleteds = new List<int>();
+
+            if (listFavorites.Any())
             {
-                characterDataWrapper.data?.results?.Where(w => favorites.Contains(w.id.ToString())).ToList()
+                List<int> idsFavorites = listFavorites.Select(s => s.id).ToList();
+
+                characterDataWrapper.data?.results?.Where(x => idsFavorites.Contains(x.id)).ToList()
                                                     .ForEach(w => w.favorite = true);             
             }
 
-            if (!string.IsNullOrEmpty(deleteds))
+            if (listDeleteds.Any())
             {
-                characterDataWrapper.data?.results?.Where(w => deleteds.Contains(w.id.ToString())).ToList()
+                List<int> idsDeleteds = listFavorites.Select(s => s.id).ToList();
+
+                characterDataWrapper.data?.results?.Where(w => idsDeleteds.Contains(w.id)).ToList()
                                                  .ForEach(w => w.deleted = true);
-            }
-
-            var  results = characterDataWrapper.data?.results.Where(w => w.deleted == false)
-                                                    .OrderByDescending(o => o.favorite);
-
-                if(characterDataWrapper.data != null)
-                    characterDataWrapper.data.results = results.ToList();
-            
+            }                     
 
             return characterDataWrapper;
         }
 
-        public ResponseContainer FavoriteCharacters(int id)
+        public CharacterDataWrapper ListFavoritesCharacters()
+        {
+            List<Character> listFavorites;
+            var response = new CharacterDataWrapper() { 
+                            data = new CharacterDataContainer() { 
+                                results = new List<Character>()
+                            }  
+            };
+            var watch = new Stopwatch();
+            watch.Start();
+
+            _logger.Log(LogLevel.Information, "Started ListFavoritesCharacters");
+
+            try
+            {
+                if (!_cache.TryGetValue("favorite", out listFavorites))
+                    listFavorites = new List<Character>();
+
+                if (listFavorites.Any())
+                    response.data.results = listFavorites;
+
+                response.code = (int)HttpStatusCode.OK;
+                response.status = HttpStatusCode.OK.ToString();
+
+            }
+            catch (System.Exception ex)
+            {
+
+                _logger.LogError($"Error\tMessage: {ex.Message} \tListFavoritesCharacters");
+
+                response.code = (int)HttpStatusCode.InternalServerError;
+                response.status = HttpStatusCode.InternalServerError.ToString();
+                response.message = ex.Message;
+            }
+            finally
+            {
+                _logger.Log(LogLevel.Information, "Finished ListFavoritesCharacters \tTime: {1}ms", watch.ElapsedMilliseconds);
+                watch.Stop();
+            }
+
+            return OrganizeCharacters(response);
+        }
+
+        public async Task<ResponseContainer> FavoriteCharacters(int id)
         {
             var response = new ResponseContainer();
-            var timeStopWatch = new Stopwatch();
-            timeStopWatch.Start();
+            List<Character> listFavorites;
+            var watch = new Stopwatch();
+            watch.Start();
 
             _logger.Log(LogLevel.Information, "Started FavoriteCharacters");
 
             try
             {                
 
-                var listFavorites = new List<string>();
+                if (!_cache.TryGetValue("favorite", out listFavorites))
+                    listFavorites = new List<Character>();
 
-                string favorites = string.Empty;
+                if (!listFavorites.Any(a => a.id == id))
+                {
+                    var character = await _characterRepository.GetByID(id);
 
-                _cache.TryGetValue("favorite", out favorites);
+                    if (character?.data.results?.Any() == true)
+                    {
+                        if (listFavorites.Count >= 5)
+                            listFavorites.Remove(listFavorites.First());
+
+                        listFavorites.Add(character?.data.results.FirstOrDefault());
+
+                        _cache.Set("favorite", listFavorites);
+                    }
+                }
                 
-
-                listFavorites = (favorites ?? "").Split(',').ToList();
-
-                if (listFavorites.Count >= 5)
-                    listFavorites.Remove(listFavorites.First());
-
-                listFavorites.Add(id.ToString());
-
-                favorites = string.Empty;
-
-                foreach (var item in listFavorites.Where(x => !string.IsNullOrEmpty(x)))
-                    favorites += ',' + item;
-                
-                _cache.Set("favorite", favorites.Substring(1));
-
                 response.code = (int)HttpStatusCode.OK;
                 response.status = HttpStatusCode.OK.ToString();
+
             }
             catch (System.Exception ex)
             {
@@ -145,8 +187,9 @@ namespace TestAntonio.Services.Impl
                 response.message = ex.Message;
             }
             finally
-            {
-                _logger.Log(LogLevel.Information, "Finished FavoriteCharacters \tTime: {1}ms", timeStopWatch.ElapsedMilliseconds);
+            {                
+                _logger.Log(LogLevel.Information, "Finished FavoriteCharacters \tTime: {1}ms", watch.ElapsedMilliseconds);
+                watch.Stop();
             }
 
             return response;
@@ -156,32 +199,28 @@ namespace TestAntonio.Services.Impl
         {
 
             var response = new ResponseContainer();
-            var timeStopWatch = new Stopwatch();
-            timeStopWatch.Start();
+            List<Character> listFavorites;
+            var watch = new Stopwatch();
+            watch.Start();
 
             _logger.Log(LogLevel.Information, "Started NotFavoriteCharacters");
 
             try
             {
 
-                var listFavorites = new List<string>();
+                if (!_cache.TryGetValue("favorite", out listFavorites))
+                    listFavorites = new List<Character>();
 
-                string favorites = string.Empty;
-                _cache.TryGetValue("favorite", out favorites); 
+                if (listFavorites.Any(a => a.id == id))
+                {
+                    listFavorites.Remove(listFavorites.Where(w => w.id == id).First());
 
-                listFavorites = (favorites ?? "").Split(',').ToList();
-
-                listFavorites.Remove(id.ToString());
-
-                favorites = string.Empty;
-
-                foreach (var item in listFavorites.Where(x => !string.IsNullOrEmpty(x)))
-                    favorites += ',' + item;
-                
-                _cache.Set("favorite", favorites.Substring(1));
+                    _cache.Set("favorite", listFavorites);
+                }
 
                 response.code = (int)HttpStatusCode.OK;
                 response.status = HttpStatusCode.OK.ToString();
+
             }
             catch (System.Exception ex)
             {
@@ -193,7 +232,8 @@ namespace TestAntonio.Services.Impl
             }
             finally
             {
-                _logger.Log(LogLevel.Information, "Finished NotFavoriteCharacters \tTime: {1}ms", timeStopWatch.ElapsedMilliseconds);
+                _logger.Log(LogLevel.Information, "Finished NotFavoriteCharacters \tTime: {1}ms", watch.ElapsedMilliseconds);
+                watch.Stop();
             }
 
             return response;
@@ -202,30 +242,21 @@ namespace TestAntonio.Services.Impl
         public ResponseContainer DeleteCharacters(int id)
         {
             var response = new ResponseContainer();
-            var timeStopWatch = new Stopwatch();
-            timeStopWatch.Start();
+            List<int> listDeleted;
+            var watch = new Stopwatch();
+            watch.Start();
 
             _logger.Log(LogLevel.Information, "Started DeleteCharacters");
 
             try
             {
-                var listDeleted = new List<string>();
 
-                string deleteds = string.Empty;
+                if (!_cache.TryGetValue("deleted", out listDeleted))
+                    listDeleted = new List<int>();
                 
-                _cache.TryGetValue("deleted", out deleteds);
-
-                listDeleted = (deleteds ?? "").Split(',').ToList();
-
-                listDeleted.Add(id.ToString());
-
-                deleteds = string.Empty;
-
-                foreach (var item in listDeleted.Where(x => !string.IsNullOrEmpty(x)))
-                    deleteds += ',' + item;
-
+                listDeleted.Add(id);                
                 
-                _cache.Set("deleted", deleteds.Substring(1));
+                _cache.Set("deleted", listDeleted);
 
                 NotFavoriteCharacters(id);
 
@@ -243,7 +274,8 @@ namespace TestAntonio.Services.Impl
             }
             finally
             {
-                _logger.Log(LogLevel.Information, "Finished DeleteCharacters \tTime: {1}ms", timeStopWatch.ElapsedMilliseconds);
+                _logger.Log(LogLevel.Information, "Finished DeleteCharacters \tTime: {1}ms", watch.ElapsedMilliseconds);
+                watch.Stop();
             }
 
             return response;
