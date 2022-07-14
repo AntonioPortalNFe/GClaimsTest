@@ -34,12 +34,12 @@
                 <p>
                     @if (totalPages > 1)
                     {
-                        <a asp-action="Index"  asp-route-pageNumber="1" class="btn btn-light" >First page</a>
-                        @for (int i = firstPage; i < lastPage; i++)
+                        <a asp-action="Index"  asp-route-pageNumber="1" class="btn btn-light" asp-route-orderBy="@ViewData["orderBy"]" asp-route-nameStartsWith="@ViewData["nameStartsWith"]" asp-route-nameFilter="@ViewData["nameFilter"]" asp-route-limit="@ViewData["limit"]" >First page</a>
+                        @for (int i = firstPage; i <= lastPage; i++)
                         {
-                            <a asp-action="Index" class="@(pageIndex == i? "font-weight-bold" : "")" asp-route-nameStartsWith="@ViewData["nameStartsWith"]" asp-route-nameFilter="@ViewData["nameFilter"]" asp-route-limit="@ViewData["limit"]" asp-route-pageNumber="@i">@i</a>
+                            <a asp-action="Index" class="@(pageIndex == i? "font-weight-bold" : "")" asp-route-orderBy="@ViewData["orderBy"]" asp-route-nameStartsWith="@ViewData["nameStartsWith"]" asp-route-nameFilter="@ViewData["nameFilter"]" asp-route-limit="@ViewData["limit"]" asp-route-pageNumber="@i">@i</a>
                         }
-                        <a asp-action="Index"  asp-route-pageNumber="@totalPages" class="btn btn-light" >Last page</a>
+                        <a asp-action="Index"  asp-route-pageNumber="@totalPages" class="btn btn-light" asp-route-orderBy="@ViewData["orderBy"]"  asp-route-nameStartsWith="@ViewData["nameStartsWith"]" asp-route-nameFilter="@ViewData["nameFilter"]" asp-route-limit="@ViewData["limit"]"  >Last page</a>
                     }
                     &nbsp;</p>
             </div>

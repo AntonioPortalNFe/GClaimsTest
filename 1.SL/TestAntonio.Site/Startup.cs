@@ -1,18 +1,10 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TestAntonio.Commom.Impl;
-using TestAntonio.Commom.Interfaces;
-using TestAntonio.Infrastructure.Impl;
-using TestAntonio.Infrastructure.Interfaces;
-using TestAntonio.Services.Impl;
-using TestAntonio.Services.Interfaces;
+using System.IO;
 
 namespace TestAntonio.Site
 {
@@ -28,15 +20,13 @@ namespace TestAntonio.Site
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IMarvelSettings>(Configuration.GetSection("MarvelSettings").Get<MarvelSettings>());
-            services.AddTransient<IComicsRepository, ComicsRepository>();
-            services.AddTransient<ICharacterRepository, CharacterRepository>();
-            services.AddScoped<IMarvelServices, MarvelServices>();
-            services.AddSingleton<IHttpRepository, HttpReposository>();
-            services.AddHttpContextAccessor();
+            services.AddDataProtection()
+            .PersistKeysToFileSystem(new DirectoryInfo(@"C:\Temp\"))
+            .SetApplicationName("SharedCookieApp");
+
             services.ConfigureApplicationCookie(options =>
-            {
-                options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Strict;
+            {                
+                options.Cookie.Name = ".AspNet.SharedCookie";
             });
             services.AddControllersWithViews();
         }

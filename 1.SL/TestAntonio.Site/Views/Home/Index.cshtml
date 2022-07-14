@@ -87,15 +87,15 @@
                     
                 </td>
                 <td>
-                    <p><a asp-action="Delete" asp-route-id="@item.id" asp-route-orderBy="@ViewData["orderBy"]">Delete</a></p>                    
+                    <p><a asp-action="Delete" asp-route-id="@item.id" asp-route-orderBy="@ViewData["orderBy"]" asp-route-nameStartsWith="@ViewData["nameStartsWith"]" asp-route-nameFilter="@ViewData["nameFilter"]" asp-route-limit="@ViewData["limit"]">Delete</a></p>                    
                     <p>
                         @if (item.favorite)
                         {
-                            <a asp-action="NotFavorite" asp-route-id="@item.id" asp-route-orderBy="@ViewData["orderBy"]" >Not favorite</a>
+                            <a asp-action="NotFavorite" asp-route-id="@item.id" asp-route-orderBy="@ViewData["orderBy"]" asp-route-nameStartsWith="@ViewData["nameStartsWith"]" asp-route-nameFilter="@ViewData["nameFilter"]" asp-route-limit="@ViewData["limit"]">Not favorite</a>
                         }
                         else
                         {
-                           <a asp-action="Favorite" asp-route-id="@item.id" asp-route-orderBy="@ViewData["orderBy"]" >Favorite</a> 
+                           <a asp-action="Favorite" asp-route-id="@item.id" asp-route-orderBy="@ViewData["orderBy"]" asp-route-nameStartsWith="@ViewData["nameStartsWith"]" asp-route-nameFilter="@ViewData["nameFilter"]" asp-route-limit="@ViewData["limit"]">Favorite</a> 
                         }
                     </p>
                 </td>
